@@ -4,7 +4,8 @@ from os import chdir
 import filecmp
 
 def listClass():
-    os.system("mkdir ../listsOfClasses")
+    if not os.path.exists("../listsOfClasses"):
+        os.system("mkdir ../listsOfClasses")
     fp_w = None
     files = glob.glob('*');
     for filename in files:
@@ -14,6 +15,7 @@ def listClass():
 
 def findDuplicatedClass():
     classDict = dict()
+
     os.system("mkdir temp")
     files = glob.glob('*');
     for filename in files:
@@ -21,12 +23,26 @@ def findDuplicatedClass():
             os.system("cp "+filename+" temp/"+filename)
             chdir("temp")
             inJarFindDuplicatedClass(filename, classDict)
+            # os.system("rm " + filename)
             chdir("../")
+    fp_w=open("duplicated_classes"+""+".txt", 'w')
+    chdir("temp")
+    for key,value in classDict.items():
+        if len(value)>1:
+            print(key,file=fp_w)
+            print(value,file=fp_w)
+            for i in range(len(value)-1):
+                for j in range(i+1,len(value)):
+                    if filecmp.cmp(value[i],value[j]):
+                        print(value[i]+" and "+value[j]+" is exactly same.",file=fp_w)
+            print(file=fp_w)
+    chdir("../")
     os.system("rm -rf temp")
 
 
-def inJarListClass(jarname, fp_w, depth=1):
-    os.system("unzip -o -d " + jarname.split('.aar')[0].split('.jar')[0] + " " + jarname + ">>" + "../" * depth + "unzipLog.txt");
+def inJarListClass(jarname, fp_w):
+    os.system("unzip -o -d " + jarname.split('.aar')[0].split('.jar')[0] + " " + jarname + ">>" +
+              os.path.dirname(os.path.abspath(__file__))+ "/unzipLog.txt");
     if fp_w == None:
         fp_w = open('../listsOfClasses/' + jarname.split('.aar')[0].split('.jar')[0] + '.txt', 'w')
 
@@ -38,26 +54,29 @@ def inJarListClass(jarname, fp_w, depth=1):
 
                 fp_w.write(inFolderFileName + '\n')
             elif ext == 'jar' or ext == 'aar':
-                depth += 1
-                inJarListClass(jarname.split('.aar')[0].split('.jar')[0] + "/" + inFolderFileName, fp_w, depth)
+
+                inJarListClass(jarname.split('.aar')[0].split('.jar')[0] + "/" + inFolderFileName, fp_w)
     os.system("rm -rf " + jarname.split('.aar')[0].split('.jar')[0])
 
 
-def inJarFindDuplicatedClass(jarname, classDict, depth=1):
-    os.system("unzip -o -d " + jarname.split('.aar')[0].split('.jar')[0] + " " + jarname + ">>" + "../" * depth + "unzipLog.txt");
+def inJarFindDuplicatedClass(jarname, classDict):
+    os.system("unzip -o -d " + jarname.split('.aar')[0].split('.jar')[0] + " " + jarname + ">>" +
+              os.path.dirname(os.path.abspath(__file__)) + "/unzipLog.txt")
 
     for path, directory, inFolderFiles in os.walk('' + jarname.split('.aar')[0].split('.jar')[0]):
         for inFolderFileName in inFolderFiles:
             ext = inFolderFileName.split('.')[-1]
             if ext == 'class':
-                if classDict.get(inFolderFileName , 0) == 0 :
-                    classDict[inFolderFileName]=[path+'/'+inFolderFileName]
+
+                packagePath= (path+'/'+inFolderFileName).replace(jarname.split('.aar')[0].split('.jar')[0]+'/', '')
+                # 여기서 infoldername은 클래스파일명이 된다.
+                if classDict.get(packagePath , 0) == 0 :
+                    classDict[packagePath]=[path+'/'+inFolderFileName]
                 else:
-                    if path+'/'+inFolderFileName not in classDict[inFolderFileName]:
-                        classDict[inFolderFileName]+=[path+'/'+inFolderFileName]
+                    if path+'/'+inFolderFileName not in classDict[packagePath]:
+                        classDict[packagePath]+=[path+'/'+inFolderFileName]
             elif ext == 'jar' or ext == 'aar':
-                depth += 1
-                inJarFindDuplicatedClass(jarname.split('.aar')[0].split('.jar')[0] + "/" + inFolderFileName, classDict, depth)
+                inJarFindDuplicatedClass(jarname.split('.aar')[0].split('.jar')[0] + "/" + inFolderFileName, classDict)
     #os.system("rm -rf " + filename.split('.aar')[0].split('.jar')[0])
 
 def main():
@@ -67,13 +86,13 @@ def main():
     except:
         print('Wrong folder name')
         return
-
-    os.system("rm unzipLog.txt")
-    switch = input("1. class list of each jar,aar\n2. find duplicated class\nEnter the menu num : ");
+    if os.path.exists("unzipLog.txt"):
+        os.system("rm unzipLog.txt")
+    switch = input("1. Find out duplicated classes\n2. create list files of each Aar,Jar files\nEnter the menu num : ");
     if switch == '1':
-        listClass()
-    elif switch == '2':
         findDuplicatedClass()
+    elif switch == '2':
+        listClass()
     else:
         print('wrong menu num\n')
 
