@@ -3,7 +3,6 @@ from os import chdir
 import filecmp
 
 
-
 def findDuplicatedClass(foldername):
     if os.path.isdir(TEMP_DIRECTORY):
         os.system('rm -rf '+TEMP_DIRECTORY)
@@ -13,20 +12,32 @@ def findDuplicatedClass(foldername):
 
     collectJar(foldername, jarLocateDict)
     unzipJarAndFindClasses(classdict)
-    findOutDuplicatedClasses(classdict)
+    findOutDuplicatedClasses(classdict,jarLocateDict)
 
-def findOutDuplicatedClasses(classdict):
+
+def findOutDuplicatedClasses(classdict,jarLocateDict):
     fp_w=open(DUPLE_LIST_OUTPUT_FILENAME,'w')
     for className,classPathList in classdict.items():
         if len(classPathList)>1 :
-            print(className,file=fp_w)
-            print(classPathList,file=fp_w)
+            printLongLine(fp_w)
+            print(className.replace(TEMP_DIRECTORY+'/',''),file=fp_w)
+            printLongLine(fp_w)
+            print("duplicated at",file=fp_w)
+            printLongLine(fp_w)
+            for i in range(len(classPathList)):
+                print(str(i)+'. '+classPathList[i].replace(TEMP_DIRECTORY+'/',''),file=fp_w)
+                originPath=jarLocateDict.get(classPathList[i].split('/')[1]+'.aar','')+jarLocateDict.get(classPathList[i].split('/')[1]+'.jar','')
+                print(' this class is in '+originPath,file=fp_w)
+            printLongLine(fp_w)
             for i in range(len(classPathList)-1):
                 for j in range(i+1,len(classPathList)):
                     if filecmp.cmp( classPathList[i], classPathList[j]) :
-                        print(classPathList[i]+" and "+classPathList[j]+' are exactly same',file=fp_w)
+                        print(classPathList[i].replace(TEMP_DIRECTORY+'/','')+" and "+classPathList[j].replace(TEMP_DIRECTORY+'/','')+' are exactly same',file=fp_w)
+                        printLongLine(fp_w)
             print(file=fp_w)
     fp_w.close()
+def printLongLine(fp_w):
+    print("-"*30,file=fp_w)
 
 def findClasses(jardir,classdict):
     for path, directory, inFolderFiles in os.walk(jardir):
@@ -42,12 +53,13 @@ def findClasses(jardir,classdict):
                 else:
                     if classFilePath not in classdict[packagePath]:
                         classdict[packagePath]+=[classFilePath]
-                        
+
+
 def unzipJarAndFindClasses(classdict):
     unziplist = list()
-    remainJar = 1
-    while remainJar > 0:
-        remainJar = 0
+    remainJar = True
+    while remainJar :
+        remainJar = False
         for path, directory, inFolderFiles in os.walk(TEMP_DIRECTORY):
             for inFolderFilename in inFolderFiles:
                 if inFolderFilename.endswith('.aar') or inFolderFilename.endswith('.jar'):
@@ -57,7 +69,7 @@ def unzipJarAndFindClasses(classdict):
                         os.system("unzip -o -d " + jarFilepath.split('.aar')[0].split('.jar')[0]
                                   + ' ' + jarFilepath + '>>unziplog.txt')
                         findClasses(jarFilepath.split('.aar')[0].split('.jar')[0],classdict)
-                        remainJar += 1
+                        remainJar = True
 
 
 def collectJar(foldername, jarLocateDict):
@@ -70,15 +82,24 @@ def collectJar(foldername, jarLocateDict):
 
 
 def main():
+    if os.path.exists("unziplog.txt"):
+        os.system("rm unziplog.txt")
+
+
     global TEMP_DIRECTORY
     TEMP_DIRECTORY='temp_duplicated'
     global DUPLE_LIST_OUTPUT_FILENAME
     DUPLE_LIST_OUTPUT_FILENAME='duplicated_classes.txt'
+    global CONFLICT_MODULE_LIST_FILENAME
+    CONFLICT_MODULE_LIST_FILENAME='conflict_modules.txt'
+    if os.path.isdir(TEMP_DIRECTORY):
+        os.system("rm -rf "+TEMP_DIRECTORY)
+
     foldername = input("Enter project folder name: ")
     findDuplicatedClass(foldername)
 
+    os.system('rm -rf '+TEMP_DIRECTORY)
 
-# os.system('rm -rf '+TEMP_DIRECTORY)
 
 if __name__ == "__main__":
     main()
