@@ -1,5 +1,4 @@
 import os
-from os import chdir
 import filecmp
 
 
@@ -27,17 +26,17 @@ def findOutDuplicatedClasses(classdict,jarLocateDict):
             for i in range(len(classPathList)):
                 print(str(i)+'. '+classPathList[i].replace(TEMP_DIRECTORY+'/',''),file=fp_w)
                 originPath=jarLocateDict.get(classPathList[i].split('/')[1]+'.aar','')+jarLocateDict.get(classPathList[i].split('/')[1]+'.jar','')
-                print(' this class is in '+originPath,file=fp_w)
+                print(' this class is in  '+originPath,file=fp_w)
             printLongLine(fp_w)
             for i in range(len(classPathList)-1):
                 for j in range(i+1,len(classPathList)):
                     if filecmp.cmp( classPathList[i], classPathList[j]) :
-                        print(classPathList[i].replace(TEMP_DIRECTORY+'/','')+" and "+classPathList[j].replace(TEMP_DIRECTORY+'/','')+' are exactly same',file=fp_w)
+                        print(str(i)+" and "+str(j)+' are exactly same',file=fp_w)
                         printLongLine(fp_w)
-            print(file=fp_w)
+            print("\n\n",file=fp_w)
     fp_w.close()
 def printLongLine(fp_w):
-    print("-"*30,file=fp_w)
+    print("-"*60,file=fp_w)
 
 def findClasses(jardir,classdict):
     for path, directory, inFolderFiles in os.walk(jardir):
