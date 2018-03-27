@@ -26,7 +26,7 @@ def FindOutDuplicatedClasses(classdict, jarLocateDict):
             for i in range(len(classPathList)):
                 print(str(i) + '. ' + classPathList[i].replace(TEMP_DIRECTORY + '/', ''), file = fp_w)
                 originPath = jarLocateDict.get(classPathList[i].split('/')[1] + '.aar', '') + jarLocateDict.get(classPathList[i].split('/')[1] + '.jar', '')
-                print(' this class is in  ' + originPath, file = fp_w)
+                print( (' this class is in ' + originPath).encode('utf-8'), file = fp_w)
             PrintLongLine(fp_w)
             for i in range(len(classPathList)-1):
                 for j in range(i + 1, len(classPathList)):
